@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成占位图标 - Viate</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .controls {
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        input[type="color"] {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .preview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .icon-preview {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        canvas {
+            width: 100%;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .size-label {
+            font-size: 12px;
+            color: #999;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .note {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f9ff;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 生成占位图标</h1>
+        <p>为 Viate Resume Builder 扩展快速生成占位图标。下载后将图标文件放置在 <code>public/</code> 目录下。</p>
+        
+        <div class="controls">
+            <label for="colorPicker">选择图标颜色：</label>
+            <input type="color" id="colorPicker" value="#6366f1">
+        </div>
+
+        <div class="preview">
+            <div class="icon-preview">
+                <canvas id="icon16" width="16" height="16"></canvas>
+                <div class="size-label">16×16</div>
+            </div>
+            <div class="icon-preview">
+                <canvas id="icon32" width="32" height="32"></canvas>
+                <div class="size-label">32×32</div>
+            </div>
+            <div class="icon-preview">
+                <canvas id="icon48" width="48" height="48"></canvas>
+                <div class="size-label">48×48</div>
+            </div>
+            <div class="icon-preview">
+                <canvas id="icon128" width="128" height="128"></canvas>
+                <div class="size-label">128×128</div>
+            </div>
+        </div>
+
+        <button onclick="downloadAllIcons()">📥 下载所有图标</button>
+
+        <div class="note">
+            <strong>💡 提示：</strong> 这些是简单的占位图标，用于快速测试扩展。建议在正式发布前使用专业设计的图标。
+        </div>
+    </div>
+
+    <script>
+        const sizes = [16, 32, 48, 128];
+
+        function drawIcon(canvasId, size, color) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // 清空画布
+            ctx.clearRect(0, 0, size, size);
+            
+            // 绘制渐变背景
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, adjustColor(color, -30));
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // 绘制简化的文档图标
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            const padding = size * 0.25;
+            const width = size * 0.5;
+            const height = size * 0.6;
+            const x = (size - width) / 2;
+            const y = (size - height) / 2;
+            
+            // 文档主体
+            ctx.fillRect(x, y, width, height);
+            
+            // 文档折角
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.moveTo(x + width, y);
+            ctx.lineTo(x + width, y + height * 0.2);
+            ctx.lineTo(x + width * 0.8, y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function adjustColor(color, amount) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+            const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+            const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+            return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+        }
+
+        function updateIcons() {
+            const color = document.getElementById('colorPicker').value;
+            sizes.forEach(size => {
+                drawIcon(`icon${size}`, size, color);
+            });
+        }
+
+        function downloadAllIcons() {
+            sizes.forEach(size => {
+                const canvas = document.getElementById(`icon${size}`);
+                const link = document.createElement('a');
+                link.download = `icon-${size}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+            
+            alert('✅ 所有图标已下载！\n请将它们移动到项目的 public/ 目录下。');
+        }
+
+        // 初始化
+        document.getElementById('colorPicker').addEventListener('input', updateIcons);
+        updateIcons();
+    </script>
+</body>
+</html>
